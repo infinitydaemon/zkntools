@@ -1,0 +1,122 @@
+#!/bin/sh
+
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+BOLD=$(tput bold)
+RESET=$(tput sgr0) # Reset text attributes
+
+# Set refresh interval (in seconds). Change this value to adjust the delay.
+REFRESH_INTERVAL=3
+
+# Number of top processes to display
+TOP_PROCESSES=5
+
+# Function to display CPU usage
+display_cpu_usage() {
+    echo "${BOLD}${BLUE}==== CPU Usage ====${RESET}"
+    echo "Overall CPU Usage:"
+    top -bn1 | awk -v green="$GREEN" -v yellow="$YELLOW" -v reset="$RESET" '
+    /%Cpu/ {
+        printf "%sUser: %s%s%%, %sSystem: %s%s%%, %sIdle: %s%s%%%s\n", green, yellow, $2, green, yellow, $4, green, yellow, $8, reset
+    }'
+    echo ""
+    echo "Top $TOP_PROCESSES CPU-Intensive Processes:"
+    ps -eo pid,user,%cpu,%mem,comm --sort=-%cpu | head -n $((TOP_PROCESSES + 1)) | tail -n $TOP_PROCESSES | awk -v green="$GREEN" -v yellow="$YELLOW" -v red="$RED" -v reset="$RESET" '
+    {
+        printf "%s%-6s%s %s%-8s%s %s%-5s%s %s%-5s%s %s%s%s\n", green, $1, reset, yellow, $2, reset, red, $3, reset, yellow, $4, reset, green, $5, reset
+    }'
+    echo ""
+}
+
+# Function to display memory usage
+display_memory_usage() {
+    echo "${BOLD}${BLUE}==== Memory Usage ====${RESET}"
+    free -h | awk -v green="$GREEN" -v yellow="$YELLOW" -v reset="$RESET" '
+    /Mem:/ {
+        printf "Total: %s%s%s, Used: %s%s%s, Free: %s%s%s\n", green, $2, reset, yellow, $3, reset, green, $4, reset
+    }'
+    echo ""
+}
+
+# Function to display disk usage
+display_disk_usage() {
+    echo "${BOLD}${BLUE}==== Disk Usage ====${RESET}"
+    df -h | awk -v green="$GREEN" -v yellow="$YELLOW" -v reset="$RESET" '
+    NR==1 {
+        printf "%-20s %-10s %-10s %-10s %-10s %s\n", $1, $2, $3, $4, $5, $6
+    }
+    NR>1 {
+        printf "%-20s %-10s %-10s %-10s %-10s %s\n", $1, green $2 reset, yellow $3 reset, green $4 reset, yellow $5 reset, $6
+    }'
+    echo ""
+}
+
+# Function to display network activity
+display_network_activity() {
+    echo "${BOLD}${BLUE}==== Network Activity ====${RESET}"
+    echo "Active Interfaces:"
+    ip -br addr show | awk -v green="$GREEN" -v yellow="$YELLOW" -v reset="$RESET" '
+    {
+        printf "%s%-10s%s %s%s%s\n", green, $1, reset, yellow, $3, reset
+    }'
+    echo ""
+    echo "Data Usage (RX/TX):"
+    awk -v green="$GREEN" -v yellow="$YELLOW" -v reset="$RESET" '
+    NR > 2 {
+        iface=$1; rx=$2; tx=$10;
+        sub(":", "", iface);
+        if (iface != "lo") {
+            printf "%s%-10s%s RX: %s%s%s, TX: %s%s%s\n", green, iface, reset, yellow, rx, reset, yellow, tx, reset
+        }
+    }' /proc/net/dev
+    echo ""
+}
+
+# Function to read user input with timeout (without using read -n)
+read_input() {
+    # Read user input with a timeout of $REFRESH_INTERVAL seconds
+    input=""
+    stty -icanon time 0 min 0
+    while true; do
+        # Capture a single character of input
+        char=$(dd bs=1 count=1 2>/dev/null)
+        if [ "$char" != "" ]; then
+            input=$char
+            break
+        fi
+        sleep 0.1
+    done
+    stty icanon
+    echo "$input"
+}
+
+# Main script
+while true; do
+    echo "${BOLD}${MAGENTA}==== System Monitor ====${RESET}"
+    echo "${BOLD}${CYAN}Press 'q' to quit. Refreshing every $REFRESH_INTERVAL seconds...${RESET}"
+    echo ""
+
+    display_cpu_usage
+    display_memory_usage
+    display_disk_usage
+    display_network_activity
+
+    # Prompt the user
+    echo "${BOLD}${YELLOW}Press 'q' to quit...${RESET}"
+
+    # Wait for user input with a timeout (simulated with read_input)
+    input=$(read_input)
+
+    if [ "$input" = "q" ]; then
+        echo "${BOLD}${RED}Exiting System Monitor...${RESET}"
+        break
+    fi
+    
+    # Sleep to simulate refresh interval
+    sleep $REFRESH_INTERVAL
+done

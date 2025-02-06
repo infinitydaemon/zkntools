@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Define colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to display iptables status in a table format
+display_iptables_status() {
+    echo -e "${BLUE}=============================================${NC}"
+    echo -e "${GREEN}IPTABLES STATUS${NC}"
+    echo -e "${BLUE}=============================================${NC}"
+    
+    # Display the iptables status with colored output
+    iptables -L -v -n --line-numbers | awk '
+    BEGIN {
+        printf "%-8s %-10s %-15s %-15s %-10s %-10s %-10s\n", "Chain", "Packets", "Bytes", "Target", "Prot", "Opt", "Source/Destination"
+        printf "%-8s %-10s %-15s %-15s %-10s %-10s %-10s\n", "------", "-------", "-----", "------", "----", "---", "----------------"
+    }
+    {
+        if ($1 ~ /^Chain/) {
+            printf "\n%-8s %-10s %-15s %-15s %-10s %-10s %-10s\n", $1, $2, $3, $4, $5, $6, $7
+        } else {
+            printf "%-8s %-10s %-15s %-15s %-10s %-10s %-10s\n", $1, $2, $3, $4, $5, $6, $7
+        }
+    }'
+    
+    echo -e "${BLUE}=============================================${NC}"
+}
+
+# Function to display open and listening ports
+display_open_ports() {
+    echo -e "${BLUE}=============================================${NC}"
+    echo -e "${GREEN}OPEN AND LISTENING PORTS${NC}"
+    echo -e "${BLUE}=============================================${NC}"
+    
+    # Use `ss` to list open and listening ports
+    echo -e "${YELLOW}Using 'ss' command:${NC}"
+    ss -tuln | awk '
+    BEGIN {
+        printf "%-10s %-20s %-20s %-10s\n", "Proto", "Local Address", "Foreign Address", "State"
+        printf "%-10s %-20s %-20s %-10s\n", "------", "-------------", "----------------", "-----"
+    }
+    {
+        printf "%-10s %-20s %-20s %-10s\n", $1, $4, $5, $6
+    }'
+    
+    echo -e "${BLUE}=============================================${NC}"
+}
+
+# Main script execution
+display_iptables_status
+display_open_ports
+
+read -n 1 -s -r -p "Press any key to continue..."
+echo "" # Add a newline after the key press

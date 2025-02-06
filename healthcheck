@@ -1,0 +1,127 @@
+#!/bin/bash
+
+# Script to check OS anomalies on Raspberry Pi
+
+# Define color codes using tput
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+BOLD=$(tput bold)
+RESET=$(tput sgr0) # Reset text attributes
+
+# Thresholds for anomalies
+CPU_THRESHOLD=90       # CPU usage percentage
+MEM_THRESHOLD=90       # Memory usage percentage
+DISK_THRESHOLD=90      # Disk usage percentage
+TEMP_THRESHOLD=70      # Temperature in Celsius
+
+# Function to check CPU usage
+check_cpu_usage() {
+    echo "${BOLD}${BLUE}==== Checking CPU Usage ====${RESET}"
+    local cpu_usage=$(top -bn1 | grep "%Cpu(s)" | awk '{print $2 + $4}')
+    if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
+        echo "${RED}High CPU usage detected: ${cpu_usage}%${RESET}"
+    else
+        echo "${GREEN}CPU usage is normal: ${cpu_usage}%${RESET}"
+    fi
+    echo ""
+}
+
+# Function to check memory usage
+check_memory_usage() {
+    echo "${BOLD}${BLUE}==== Checking Memory Usage ====${RESET}"
+    local mem_usage=$(free | grep Mem | awk '{print $3/$2 * 100}')
+    if (( $(echo "$mem_usage > $MEM_THRESHOLD" | bc -l) )); then
+        echo "${RED}High memory usage detected: ${mem_usage}%${RESET}"
+    else
+        echo "${GREEN}Memory usage is normal: ${mem_usage}%${RESET}"
+    fi
+    echo ""
+}
+
+# Function to check disk usage
+check_disk_usage() {
+    echo "${BOLD}${BLUE}==== Checking Disk Usage ====${RESET}"
+    df -h | awk -v red="$RED" -v green="$GREEN" -v reset="$RESET" -v threshold="$DISK_THRESHOLD" '
+    NR>1 {
+        usage = $5;
+        sub(/%/, "", usage);
+        if (usage > threshold) {
+            printf "%sWarning: %s usage is %s%%%s\n", red, $1, usage, reset;
+        } else {
+            printf "%s%s usage is normal: %s%%%s\n", green, $1, usage, reset;
+        }
+    }'
+    echo ""
+}
+
+# Function to check network anomalies
+check_network_anomalies() {
+    echo "${BOLD}${BLUE}==== Checking Network Activity ====${RESET}"
+    local rx_bytes=$(cat /proc/net/dev | grep -v lo | awk '{sum += $2} END {print sum}')
+    local tx_bytes=$(cat /proc/net/dev | grep -v lo | awk '{sum += $10} END {print sum}')
+    echo "Total RX: ${rx_bytes} bytes, Total TX: ${tx_bytes} bytes"
+    echo ""
+}
+
+# Function to check system logs for errors
+check_system_logs() {
+    echo "${BOLD}${BLUE}==== Checking System Logs ====${RESET}"
+    local log_errors=$(journalctl -p 3 -xb | grep -i "error\|warning" | tail -n 5)
+    if [[ -n "$log_errors" ]]; then
+        echo "${RED}Recent errors/warnings in system logs:${RESET}"
+        echo "$log_errors"
+    else
+        echo "${GREEN}No recent errors/warnings in system logs.${RESET}"
+    fi
+    echo ""
+}
+
+# Function to check temperature
+check_temperature() {
+    echo "${BOLD}${BLUE}==== Checking Temperature ====${RESET}"
+    local temp=$(vcgencmd measure_temp | awk -F= '{print $2}' | awk -F\' '{print $1}')
+    if (( $(echo "$temp > $TEMP_THRESHOLD" | bc -l) )); then
+        echo "${RED}High temperature detected: ${temp}°C${RESET}"
+    else
+        echo "${GREEN}Temperature is normal: ${temp}°C${RESET}"
+    fi
+    echo ""
+}
+
+# Function to check failed services
+check_failed_services() {
+    echo "${BOLD}${BLUE}==== Checking Failed Services ====${RESET}"
+    local failed_services=$(systemctl --failed | grep "loaded units listed")
+    if [[ "$failed_services" == *"0 loaded units listed"* ]]; then
+        echo "${GREEN}No failed services.${RESET}"
+    else
+        echo "${RED}Failed services detected:${RESET}"
+        systemctl --failed
+    fi
+    echo ""
+}
+
+# Function to check unexpected reboots
+check_reboots() {
+    echo "${BOLD}${BLUE}==== Checking Unexpected Reboots ====${RESET}"
+    local last_reboot=$(last reboot | head -n 1)
+    echo "Last reboot: $last_reboot"
+    echo ""
+}
+
+# Main script
+echo "${BOLD}${MAGENTA}==== ZerOS Anomaly Check ====${RESET}"
+check_cpu_usage
+check_memory_usage
+check_disk_usage
+check_network_anomalies
+check_system_logs
+check_temperature
+check_failed_services
+check_reboots
+echo "${BOLD}${GREEN}Anomaly check completed.${RESET}"

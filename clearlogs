@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Define the maximum age of logs (in days)
+MAX_AGE=30
+
+# Clean up old logs
+echo "Cleaning up logs older than $MAX_AGE days..."
+sudo find /var/log -type f -mtime +$MAX_AGE -exec rm -f {} \;
+
+echo "Log cleanup complete!"

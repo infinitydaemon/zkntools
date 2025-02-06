@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Function to get network traffic
+get_traffic() {
+    INTERFACE="eth0"  # Change this to your network interface
+    RX_BYTES=$(cat /sys/class/net/$INTERFACE/statistics/rx_bytes)
+    TX_BYTES=$(cat /sys/class/net/$INTERFACE/statistics/tx_bytes)
+    echo "RX: $((RX_BYTES / 1024)) KB | TX: $((TX_BYTES / 1024)) KB"
+}
+
+# Main loop
+while true; do
+    TRAFFIC=$(get_traffic)
+    dialog --title "Network Traffic Monitor" --infobox "$TRAFFIC" 10 30
+    sleep 1
+done

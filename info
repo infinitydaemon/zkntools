@@ -1,0 +1,39 @@
+#!/bin/bash
+
+display_processor_info() {
+    echo "===== Processor Information ====="
+    echo "CPU Model: $(grep 'model name' /proc/cpuinfo | head -n 1 | cut -d ':' -f 2 | sed 's/^ *//')"
+    echo "CPU Cores: $(grep -c '^processor' /proc/cpuinfo)"
+    echo "CPU Architecture: $(lscpu | grep 'Architecture' | cut -d ':' -f 2 | sed 's/^ *//')"
+    echo "CPU Frequency: $(vcgencmd measure_clock arm | awk -F '=' '{print $2 / 1000000 " MHz"}')"
+    echo "CPU Temperature: $(vcgencmd measure_temp | cut -d '=' -f 2)"
+    echo ""
+}
+
+display_memory_info() {
+    echo "===== Memory Information ====="
+    TOTAL_MEM=$(free -h | grep 'Mem:' | awk '{print $2}')
+    USED_MEM=$(free -h | grep 'Mem:' | awk '{print $3}')
+    FREE_MEM=$(free -h | grep 'Mem:' | awk '{print $4}')
+    AVAILABLE_MEM=$(free -h | grep 'Mem:' | awk '{print $7}')
+    SWAP_TOTAL=$(free -h | grep 'Swap:' | awk '{print $2}')
+    SWAP_USED=$(free -h | grep 'Swap:' | awk '{print $3}')
+
+    echo "Total Memory: $TOTAL_MEM"
+    echo "Used Memory: $USED_MEM"
+    echo "Free Memory: $FREE_MEM"
+    echo "Available Memory: $AVAILABLE_MEM"
+    echo "Total Swap: $SWAP_TOTAL"
+    echo "Used Swap: $SWAP_USED"
+    echo ""
+}
+
+main() {
+    clear
+    echo "=====System Information ====="
+    echo "The CPU clock displayed will be the current dynamic clock and not the max clock"
+    display_processor_info
+    display_memory_info
+}
+
+main

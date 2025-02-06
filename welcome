@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# ZKN MOTD - Fancy Message of the Day
+clear
+
+# Define colors
+RED="\e[31m"
+GREEN="\e[32m"
+BLUE="\e[34m"
+CYAN="\e[36m"
+YELLOW="\e[33m"
+RESET="\e[0m"
+
+# ASCII Banner
+cat << "EOF"
+
+
+    _  _  _  _  _  _           _  _           _    
+   (_)(_)(_)(_)(_)(_)       _ (_)(_) _       (_)   
+             _(_) (_)    _ (_)   (_)(_)_     (_)   
+           _(_)   (_) _ (_)      (_)  (_)_   (_)   
+         _(_)     (_)(_) _       (_)    (_)_ (_)   
+       _(_)       (_)   (_) _    (_)      (_)(_)   
+    _ (_) _  _  _ (_)      (_) _ (_)         (_)   
+   (_)(_)(_)(_)(_)(_)         (_)(_)         (_)   
+EOF
+echo -e ""
+# Display system info
+echo -e "${YELLOW}Welcome to ZKN - Zero Knowledge Network${RESET}"
+echo -e "${BLUE}Hostname:${RESET} $(hostname)"
+echo -e "${GREEN}Uptime:${RESET} $(uptime -p)"
+echo -e "${RED}Load Average:${RESET} $(cat /proc/loadavg)"
+echo -e "${CYAN}IP Address:${RESET} $(hostname -I | awk '{print $1}')"
+echo -e "${CYAN}Public IP Address:${RESET} $(curl -s ifconfig.me)"
+
+echo -e "${YELLOW}Secure, Private, and Decentralized!${RESET}"
+echo -e "${GREEN}>>> Access with Confidence <<<${RESET}"
+echo -e "${YELLOW}Use zktools regularly to keep system healthy${RESET}"
+echo -e ""
+echo -e "Built by CWD SYSTEMS https://cwd.systems"
+echo -e ""

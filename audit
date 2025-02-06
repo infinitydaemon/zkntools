@@ -1,0 +1,129 @@
+#!/bin/bash
+
+# ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Function to display the fancy title
+display_title() {
+
+echo -e "${MAGENTA}"
+echo "  _______  __   __  _______  __   __ "
+    echo " |       ||  | |  ||       ||  | |  |"
+    echo " |  _____||  |_|  ||   _   ||  |_|  |"
+    echo " | |_____ |       ||  | |  ||       |"
+    echo " |_____  ||       ||  |_|  ||       |"
+    echo "  _____| ||   _   ||       ||   _   |"
+    echo " |_______||__| |__||_______||__| |__|"
+    echo -e "${NC}"
+    echo -e "${CYAN}===== ZKN System Audit for Edge Node 400 ====="
+    echo -e "${NC}"
+}
+
+# Function to check for rootkits using rkhunter and chkrootkit
+check_for_rootkits() {
+    echo -e "${BLUE}===== Checking for Rootkits =====${NC}"
+    if command -v rkhunter &> /dev/null; then
+        echo -e "${GREEN}Running rkhunter...${NC}"
+        sudo rkhunter --check --sk
+    else
+        echo -e "${RED}rkhunter is not installed. Install it with: sudo apt install rkhunter${NC}"
+    fi
+
+    if command -v chkrootkit &> /dev/null; then
+        echo -e "${GREEN}Running chkrootkit...${NC}"
+        sudo chkrootkit
+    else
+        echo -e "${RED}chkrootkit is not installed. Install it with: sudo apt install chkrootkit${NC}"
+    fi
+    echo ""
+}
+
+# Function to check file integrity using checksums
+check_file_integrity() {
+    echo -e "${BLUE}===== Checking File Integrity =====${NC}"
+    CRITICAL_FILES=(
+        "/bin/bash"
+        "/usr/bin/sudo"
+        "/etc/passwd"
+        "/etc/shadow"
+        "/etc/group"
+        "/etc/hosts"
+        "/etc/ssh/sshd_config"
+    )
+
+    for file in "${CRITICAL_FILES[@]}"; do
+        if [[ -f "$file" ]]; then
+            echo -e "${CYAN}Checking $file...${NC}"
+            sha256sum "$file"
+        else
+            echo -e "${RED}$file does not exist!${NC}"
+        fi
+    done
+    echo ""
+}
+
+# Function to check for unauthorized users or groups
+check_unauthorized_users() {
+    echo -e "${BLUE}===== Checking for Unauthorized Users =====${NC}"
+    echo -e "${CYAN}Users with login shells:${NC}"
+    grep -E ':/bin/(bash|sh|zsh)' /etc/passwd
+    echo ""
+
+    echo -e "${CYAN}Suspicious users:${NC}"
+    grep -E '^(nobody|www-data|ftp|guest)' /etc/passwd
+    echo ""
+
+    echo -e "${CYAN}Suspicious groups:${NC}"
+    grep -E '^(sudo|adm|root)' /etc/group
+    echo ""
+}
+
+# Function to audit system logs for signs of intrusion
+audit_system_logs() {
+    echo -e "${BLUE}===== Auditing System Logs =====${NC}"
+    echo -e "${CYAN}Checking auth.log for failed login attempts...${NC}"
+    sudo grep "Failed password" /var/log/auth.log
+    echo ""
+
+    echo -e "${CYAN}Checking for SSH login attempts...${NC}"
+    sudo grep "sshd" /var/log/auth.log | grep "Accepted"
+    echo ""
+
+    echo -e "${CYAN}Checking for sudo usage...${NC}"
+    sudo grep "sudo:" /var/log/auth.log
+    echo ""
+}
+
+# Function to check for open ports and services
+check_open_ports() {
+    echo -e "${BLUE}===== Checking Open Ports =====${NC}"
+    echo -e "${CYAN}Running netstat...${NC}"
+    sudo netstat -tuln
+    echo ""
+
+    echo -e "${CYAN}Running ss...${NC}"
+    sudo ss -tuln
+    echo ""
+}
+
+# Main function
+main() {
+    clear
+    display_title
+    check_for_rootkits
+    check_file_integrity
+    check_unauthorized_users
+    audit_system_logs
+    check_open_ports
+    echo -e "${MAGENTA}===== ZKN System Audit Complete ====="
+    echo -e "${NC}"
+}
+
+# Run the script
+main

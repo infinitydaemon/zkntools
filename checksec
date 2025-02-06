@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Purpose: Enhance local security by performing common security checks and tasks.
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Function to check for open ports
+check_open_ports() {
+    echo -e "${YELLOW}[+] Checking for open ports...${NC}"
+    sudo netstat -tuln | grep LISTEN
+    echo -e "${GREEN}[+] Open ports checked.${NC}"
+}
+
+# Function to monitor failed login attempts
+monitor_failed_logins() {
+    echo -e "${YELLOW}[+] Monitoring failed login attempts...${NC}"
+    sudo grep "Failed password" /var/log/auth.log
+    echo -e "${GREEN}[+] Failed login attempts checked.${NC}"
+}
+
+# Function to update the system
+update_system() {
+    echo -e "${YELLOW}[+] Updating system packages...${NC}"
+    sudo apt-get update && sudo apt-get upgrade -y
+    echo -e "${GREEN}[+] System updated.${NC}"
+}
+
+# Function to check for unauthorized users
+check_unauthorized_users() {
+    echo -e "${YELLOW}[+] Checking for unauthorized users...${NC}"
+    sudo awk -F: '($3 < 1000) {print $1}' /etc/passwd
+    echo -e "${GREEN}[+] Unauthorized users checked.${NC}"
+}
+
+# Function to check for root SSH access
+check_root_ssh() {
+    echo -e "${YELLOW}[+] Checking if root SSH login is allowed...${NC}"
+    if sudo grep -q "PermitRootLogin yes" /etc/ssh/sshd_config; then
+        echo -e "${RED}[-] WARNING: Root SSH login is enabled!${NC}"
+    else
+        echo -e "${GREEN}[+] Root SSH login is disabled.${NC}"
+    fi
+}
+
+# Function to check for unnecessary services
+check_unnecessary_services() {
+    echo -e "${YELLOW}[+] Checking for unnecessary services...${NC}"
+    sudo service --status-all | grep "+"
+    echo -e "${GREEN}[+] Unnecessary services checked.${NC}"
+}
+
+# Function to check disk usage
+check_disk_usage() {
+    echo -e "${YELLOW}[+] Checking disk usage...${NC}"
+    df -h
+    echo -e "${GREEN}[+] Disk usage checked.${NC}"
+}
+
+# Main function
+main() {
+    echo -e "${GREEN}[+] Starting Local Security Check...${NC}"
+    check_open_ports
+    monitor_failed_logins
+    update_system
+    check_unauthorized_users
+    check_root_ssh
+    check_unnecessary_services
+    check_disk_usage
+    echo -e "${GREEN}[+] Security check completed!${NC}"
+}
+
+# Run the script
+main
