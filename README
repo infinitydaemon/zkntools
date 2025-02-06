@@ -16,8 +16,12 @@ Installation
 
 Clone the repository and set up executable permissions:
 
+sudo apt update
+sudo apt install libncurses-dev
 git clone https://github.com/yourusername/zktools.git
 cd zktools
 chmod +x *.sh
 sudo cp * /usr/local/bin
+
+Use "zktools" for main menu.
 
