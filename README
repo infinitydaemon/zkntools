@@ -20,7 +20,7 @@ sudo apt update
 sudo apt install libncurses-dev
 git clone https://github.com/yourusername/zktools.git
 cd zktools
-chmod +x *.sh
+chmod +x *
 sudo cp * /usr/local/bin
 
 Use "zktools" for main menu.
