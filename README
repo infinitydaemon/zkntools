@@ -1,3 +1,22 @@
+```python
+class ZKTOOLS():
+    
+  def __init__(self):
+    self.name = "cwd";
+    self.current.release = "zktools for Edge Node";
+    self.username = "cwdsystems";
+    self.location = "KyrgzRepublic";
+    self.protonmail = "@cwdsystems";
+    self.web = "https://cwd.systems";
+    self.languages ="Objective C, Bash";
+  
+  def __str__(self):
+    return self.name
+
+if __name__ == '__main__':
+    me = ZKTOOLS()
+```
+
 zktools
 
 zktools is a collection of open Bash and C code designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400 and compatible devices. These tools help automate security configurations, manage system resources, and enhance overall system integrity.
