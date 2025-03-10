@@ -1,0 +1,140 @@
+#!/bin/bash
+
+# Check if script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root"
+    exit 1
+fi
+
+# Check if dialog is installed
+if ! command -v dialog &> /dev/null; then
+    echo "Installing dialog..."
+    apt-get update && apt-get install -y dialog
+fi
+
+# Temporary files
+TEMP=/tmp/iptables_menu_$$
+TRAFFIC_LOG=/tmp/traffic_log_$$
+
+# Colors for dialog
+DIALOGRC="
+screen_color = (WHITE,BLUE,ON)
+title_color = (YELLOW,BLUE,ON)
+border_color = (WHITE,BLUE,ON)
+button_label_active_color = (WHITE,RED,ON)
+button_label_inactive_color = (WHITE,BLUE,ON)
+"
+
+echo "$DIALOGRC" > ~/.dialogrc
+
+# Cleanup function
+cleanup() {
+    rm -f $TEMP $TRAFFIC_LOG
+    clear
+    exit 0
+}
+
+trap cleanup EXIT INT TERM
+
+# Function to monitor real-time traffic
+monitor_traffic() {
+    dialog --title "Real-Time Traffic Monitor" --tailboxbg $TRAFFIC_LOG 20 70 &
+    DIALOG_PID=$!
+    
+    while true; do
+        iptables -L -v -n --line-numbers | grep -v "Chain" | awk '{print $1" "$2" "$3" "$7" -> "$8}' > $TRAFFIC_LOG
+        sleep 1
+    done &
+    TRAFFIC_PID=$!
+    
+    wait $DIALOG_PID
+    kill $TRAFFIC_PID
+}
+
+# Function to setup SPI
+setup_spi() {
+    iptables -F
+    iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    iptables -A OUTPUT -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+    iptables -A INPUT -m state --state NEW -j DROP
+    dialog --msgbox "SPI Configured:\n- Allowing established/related connections\n- Allowing new outgoing\n- Dropping new incoming" 10 50
+}
+
+# Function for DPI (basic port-based inspection)
+setup_dpi() {
+    CHOICE=$(dialog --menu "DPI Configuration" 15 50 5 \
+        1 "Block HTTP (80)" \
+        2 "Block HTTPS (443)" \
+        3 "Block SSH (22)" \
+        4 "Block FTP (21)" \
+        5 "Custom Port" 2>$TEMP)
+    
+    case $(cat $TEMP) in
+        1) iptables -A INPUT -p tcp --dport 80 -j DROP
+           iptables -A OUTPUT -p tcp --dport 80 -j DROP ;;
+        2) iptables -A INPUT -p tcp --dport 443 -j DROP
+           iptables -A OUTPUT -p tcp --dport 443 -j DROP ;;
+        3) iptables -A INPUT -p tcp --dport 22 -j DROP
+           iptables -A OUTPUT -p tcp --dport 22 -j DROP ;;
+        4) iptables -A INPUT -p tcp --dport 21 -j DROP
+           iptables -A OUTPUT -p tcp --dport 21 -j DROP ;;
+        5) dialog --inputbox "Enter port to block:" 8 40 2>$TEMP
+           PORT=$(cat $TEMP)
+           iptables -A INPUT -p tcp --dport $PORT -j DROP
+           iptables -A OUTPUT -p tcp --dport $PORT -j DROP ;;
+    esac
+    dialog --msgbox "DPI rule added successfully" 6 30
+}
+
+# Function to add custom rule
+add_custom_rule() {
+    dialog --form "Add Custom Rule" 15 50 7 \
+        "Chain (INPUT/OUTPUT/FORWARD):" 1 1 "INPUT" 1 25 20 15 \
+        "Source IP:" 2 1 "0.0.0.0/0" 2 25 20 15 \
+        "Dest IP:" 3 1 "0.0.0.0/0" 3 25 20 15 \
+        "Protocol (tcp/udp/all):" 4 1 "all" 4 25 20 15 \
+        "Port:" 5 1 "" 5 25 20 15 \
+        "Action (ACCEPT/DROP):" 6 1 "DROP" 6 25 20 15 2>$TEMP
+    
+    read CHAIN SRC DST PROTO PORT ACTION < $TEMP
+    if [ -n "$PORT" ]; then
+        iptables -A $CHAIN -s $SRC -d $DST -p $PROTO --dport $PORT -j $ACTION
+    else
+        iptables -A $CHAIN -s $SRC -d $DST -p $PROTO -j $ACTION
+    fi
+    dialog --msgbox "Rule added successfully" 6 30
+}
+
+# Function to view rules
+view_rules() {
+    iptables -L -v -n --line-numbers > $TEMP
+    dialog --title "Current IPTables Rules" --textbox $TEMP 20 70
+}
+
+# Main menu
+while true; do
+    dialog --clear --title "IPTables Firewall Control" \
+        --menu "Select an option:" 20 60 12 \
+        1 "Monitor Real-Time Traffic" \
+        2 "Configure SPI (Stateful Inspection)" \
+        3 "Configure DPI (Deep Packet Inspection)" \
+        4 "Add Custom Rule" \
+        5 "View Current Rules" \
+        6 "Flush All Rules" \
+        7 "Exit" 2>$TEMP
+    
+    CHOICE=$(cat $TEMP)
+    
+    case $CHOICE in
+        1) monitor_traffic ;;
+        2) setup_spi ;;
+        3) setup_dpi ;;
+        4) add_custom_rule ;;
+        5) view_rules ;;
+        6) iptables -F
+           dialog --msgbox "All rules flushed" 6 30 ;;
+        7) break ;;
+    esac
+done
+
+cleanup
