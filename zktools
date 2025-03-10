@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# ZK Tools by Raziel K.
-# Feel free  to contribute
+# ZK Tools by CWD SYSTEMS
+# Feel free to contribute by creating pull requests
 
 # Function to display the menu
 show_menu() {
-    dialog --clear --title "ZK Tools by Raziel K." \
+    dialog --clear --title "ZK Tools V 1.1 by CWD SYSTEMS" \
         --menu "Scroll & select an option:" 20 60 9 \
         1 "Check for Rootkits & Backdoors" \
         2 "Clear ZerOS System Logs" \
@@ -15,8 +15,9 @@ show_menu() {
         6 "Basic System Info" \
         7 "Traffic Monitor" \
         8 "Check Security & Update System" \
-	9 "Warranty & Disclaimer" \
-	10 "Exit" 2> /tmp/menu_choice
+	   9 "Warranty & Disclaimer" \
+	   10 "Packet Sniffer"\
+	   11 "Exit" 2> /tmp/menu_choice
 
     choice=$(< /tmp/menu_choice)
     execute_program "$choice"
@@ -32,13 +33,14 @@ execute_program() {
         5) cmd="/usr/local/bin/healthcheck";;
         6) cmd="/usr/local/bin/info";;
         7) cmd="/usr/local/bin/trafficmon";;
-	8) cmd="/usr/local/bin/checksec";;
-	9) cmd="/usr/local/bin/support";;
-        10) clear; exit 0;;
+	   8) cmd="/usr/local/bin/checksec";;
+	   9) cmd="/usr/local/bin/support";;
+        10)cmd="sudo /usr/local/bin/packet_sniff";;
+	   11) clear; exit 0;;
         *) dialog --msgbox "Invalid option. Please try again." 5 30; return;;
     esac
     
-    dialog --colors --title "\Zb\Z1Running $cmd...\Zn" --infobox "Executing command..." 5 50
+    dialog --colors --title "\Zb\Z1Running $cmd...\Zn" --infobox "Executing script..." 5 50
     sleep 1
     clear
     $cmd; read -p "Press Enter to return to the menu..."
