@@ -1,6 +1,6 @@
 zktools
 
-zktools is a collection of open Bash scripts designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400. These tools help automate security configurations, manage system resources, and enhance overall system integrity.
+zktools is a collection of open Bash and C code designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400. These tools help automate security configurations, manage system resources, and enhance overall system integrity.
 
 Features
 
@@ -17,10 +17,11 @@ Installation
 Clone the repository and set up executable permissions:
 
 sudo apt update
-sudo apt install libncurses-dev
+sudo apt install libpcap-dev libncurses-dev -y
 git clone https://github.com/yourusername/zktools.git
 cd zktools
 chmod +x *
+gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
 sudo cp * /usr/local/bin
 
 Use "zktools" for main menu.
