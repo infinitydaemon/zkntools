@@ -13,9 +13,13 @@
 
 #define SNAP_LEN 1518  // Max packet length
 
-// Ncurses window initialization
+// Initialize ncurses with color settings
 void init_ncurses() {
     initscr();
+    start_color();
+    init_pair(1, COLOR_GREEN, COLOR_BLUE);  // Green text, blue background
+    bkgd(COLOR_PAIR(1));  // Apply background color
+    attron(COLOR_PAIR(1)); // Use color pair for text
     cbreak();
     noecho();
     curs_set(0);
@@ -69,7 +73,7 @@ int main() {
         return 2;
     }
 
-    // Initialize ncurses
+    // Initialize ncurses with colors
     init_ncurses();
     mvprintw(0, 1, "Network Monitor - Listening on %s", device);
     refresh();
