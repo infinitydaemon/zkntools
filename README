@@ -1,7 +1,7 @@
 
 zktools
 
-zktools is a collection of open Bash and C code designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400 and compatible devices. These tools help automate security configurations, manage system resources, and enhance overall system integrity.
+zktools is a collection of open Bash and C code designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400 and compatible devices. These tools help automate security configurations, manage system resources, and enhance overall system integrity. The tools are a work in progress and more features will be added in time.
 
 Features
 
