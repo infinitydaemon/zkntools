@@ -1,20 +1,22 @@
+![Github Banner](https://cwd.systems/img/banner.png)
+
 ```python
-class ZKTOOLS():
+class CWD_OpSec():
     
   def __init__(self):
     self.name = "cwd";
-    self.current.release = "zktools for Edge Node";
+    self.current.release = "The Crawling Serpent for ARM";
     self.username = "cwdsystems";
     self.location = "KyrgzRepublic";
     self.protonmail = "@cwdsystems";
     self.web = "https://cwd.systems";
-    self.languages ="Objective C, Bash";
+    self.languages ="Objective C, Python,Bash,Perl";
   
   def __str__(self):
     return self.name
 
 if __name__ == '__main__':
-    me = ZKTOOLS()
+    me = CWD_OpSec()
 ```
 
 zktools
