@@ -9,6 +9,9 @@ validate_country_code() {
     fi
 }
 
+# Name of the ipset
+IPSET_NAME="blocked_countries"
+
 # Ask the user which countries to block
 echo "Enter the country codes you want to block (e.g., CN RU IR)."
 echo "You can find country codes here: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2"
@@ -22,20 +25,32 @@ for COUNTRY in "${COUNTRIES[@]}"; do
     fi
 done
 
-# Create an ipset for storing the IP ranges
-IPSET_NAME="blocked_countries"
-sudo ipset create $IPSET_NAME hash:net
+# Check if the ipset already exists
+if ! sudo ipset list -n | grep -q "^$IPSET_NAME$"; then
+    echo "Creating new ipset: $IPSET_NAME"
+    sudo ipset create $IPSET_NAME hash:net
+else
+    echo "Using existing ipset: $IPSET_NAME"
+fi
 
-# Download the IP ranges for the specified countries
+# Download the IP ranges for the specified countries and add them to the ipset
 for COUNTRY in "${COUNTRIES[@]}"; do
     echo "Blocking $COUNTRY..."
     wget -O - http://www.ipdeny.com/ipblocks/data/countries/$COUNTRY.zone 2>/dev/null | while read IP; do
-        sudo ipset add $IPSET_NAME $IP
+        if ! sudo ipset test $IPSET_NAME $IP 2>/dev/null; then
+            sudo ipset add $IPSET_NAME $IP
+        else
+            echo "IP $IP from $COUNTRY is already blocked."
+        fi
     done
 done
 
-# Block the IPs using iptables
-sudo iptables -I INPUT -m set --match-set $IPSET_NAME src -j DROP
-sudo iptables -I FORWARD -m set --match-set $IPSET_NAME src -j DROP
+# Block the IPs using iptables (if the rules don't already exist)
+if ! sudo iptables -C INPUT -m set --match-set $IPSET_NAME src -j DROP 2>/dev/null; then
+    sudo iptables -I INPUT -m set --match-set $IPSET_NAME src -j DROP
+fi
+if ! sudo iptables -C FORWARD -m set --match-set $IPSET_NAME src -j DROP 2>/dev/null; then
+    sudo iptables -I FORWARD -m set --match-set $IPSET_NAME src -j DROP
+fi
 
 echo "Traffic from the following countries has been blocked: ${COUNTRIES[*]}"
