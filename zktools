@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ZK Tools by CWD SYSTEMS
-# Feel free to contribute by creating pull requests
+# Feel free  to contribute
 
 # Function to display the menu
 show_menu() {
@@ -15,9 +15,10 @@ show_menu() {
         6 "Basic System Info" \
         7 "Traffic Monitor" \
         8 "Check Security & Update System" \
-	   9 "Warranty & Disclaimer" \
-	   10 "Packet Sniffer"\
-	   11 "Exit" 2> /tmp/menu_choice
+	9 "Packet Sniffer" \
+	10 "Country Block"\
+	11 "Warranty & Disclaimer"\
+	12 "Exit" 2> /tmp/menu_choice
 
     choice=$(< /tmp/menu_choice)
     execute_program "$choice"
@@ -33,10 +34,11 @@ execute_program() {
         5) cmd="/usr/local/bin/healthcheck";;
         6) cmd="/usr/local/bin/info";;
         7) cmd="/usr/local/bin/trafficmon";;
-	   8) cmd="/usr/local/bin/checksec";;
-	   9) cmd="/usr/local/bin/support";;
-        10)cmd="sudo /usr/local/bin/packet_sniff";;
-	   11) clear; exit 0;;
+	8) cmd="/usr/local/bin/checksec";;
+	9) cmd="sudo /usr/local/bin/packet_sniff";;
+        10)cmd="/usr/local/bin/countryblock";;
+	11)cmd="/usr/local/bin/support";;
+	12) clear; exit 0;;
         *) dialog --msgbox "Invalid option. Please try again." 5 30; return;;
     esac
     
