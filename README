@@ -19,7 +19,7 @@ Clone the repository and set up executable permissions:
 
 sudo apt update
 sudo apt install libpcap-dev libncurses-dev -y
-git clone https://github.com/yourusername/zktools.git
+https://github.com/infinitydaemon/zktools.git
 cd zktools
 chmod +x *
 gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
