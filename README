@@ -18,7 +18,7 @@ Installation
 Clone the repository and set up executable permissions:
 
 sudo apt update
-sudo apt install libpcap-dev libncurses-dev -y
+sudo apt install dialog libpcap-dev libncurses-dev -y
 https://github.com/infinitydaemon/zktools.git
 cd zktools
 chmod +x *
