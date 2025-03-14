@@ -46,7 +46,6 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
             case IPPROTO_ICMP: strcpy(protocol, "ICMP"); break;
             default: strcpy(protocol, "Other");
         }
-
         // Ncurses display update
         static int row = 3;
         mvprintw(row, 1, "Packet: %d bytes | Src: %s | Dst: %s | Protocol: %s",
@@ -61,21 +60,32 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
 
 int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
-    char *device = pcap_lookupdev(errbuf); // Auto-detect network interface
-    if (device == NULL) {
-        fprintf(stderr, "Error finding device: %s\n", errbuf);
+    pcap_if_t *alldevs;
+    pcap_if_t *device;
+
+    // Find all devices
+    if (pcap_findalldevs(&alldevs, errbuf) == -1) {
+        fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
         return 1;
     }
 
-    pcap_t *handle = pcap_open_live(device, SNAP_LEN, 1, 1000, errbuf);
+    // Use the first device
+    if (alldevs == NULL) {
+        fprintf(stderr, "No devices found.\n");
+        return 1;
+    }
+    device = alldevs;
+
+    pcap_t *handle = pcap_open_live(device->name, SNAP_LEN, 1, 1000, errbuf);
     if (handle == NULL) {
-        fprintf(stderr, "Could not open device %s: %s\n", device, errbuf);
+        fprintf(stderr, "Could not open device %s: %s\n", device->name, errbuf);
+        pcap_freealldevs(alldevs);
         return 2;
     }
 
     // Initialize ncurses with colors
     init_ncurses();
-    mvprintw(0, 1, "Network Monitor - Listening on %s", device);
+    mvprintw(0, 1, "Network Monitor - Listening on %s", device->name);
     refresh();
 
     // Capture packets and handle user input
@@ -88,6 +98,7 @@ int main() {
 
     // Cleanup
     pcap_close(handle);
+    pcap_freealldevs(alldevs);
     endwin();
     return 0;
 }
