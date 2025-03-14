@@ -24,6 +24,8 @@ cd zktools
 chmod +x *
 gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
 sudo cp * /usr/local/bin
+cd..
+rm -rf zktools
 
 Use "zktools" for main menu.
 
