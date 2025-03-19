@@ -1,35 +1,40 @@
 /*
- * packet_sniff.c - A Simple Packet Sniffer
- * -----------------------------------------
- * This program captures network packets using `libpcap` and provides a 
- * user-friendly interface using `ncurses`. It allows real-time monitoring 
- * of network traffic.
+ * Advanced Packet Sniffer in C (Ettercap-like Passive Mode)
+ * ---------------------------------------------------------
+ * This program captures network packets using libpcap, extracts packet details,
+ * resolves IP addresses to hostnames, and displays protocol information.
+ * 
+ * Features:
+ * - Captures and processes live network traffic.
+ * - Extracts IP addresses, resolves hostnames.
+ * - Identifies protocols (TCP, UDP, ICMP).
+ * - Displays packet size and source/destination information.
+ * - Works on a specified network interface (default: eth0).
  *
  * Compilation:
- *  gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
+ *  gcc -o packet_sniff packet_sniff.c -lpcap
  *
  * Usage:
- *  sudo ./packet_sniff 
- * 
+ *  sudo ./packet_sniff [interface]
  *
  * Dependencies:
- *  - libpcap   : Packet capture library (install with `sudo apt install libpcap-dev`)
- *  - ncurses   : Terminal UI library (install with `sudo apt install libncurses-dev`)
- *
- *
- * Features:
- *  - Captures packets in real time
- *  - Displays packet details (source, destination, protocol, size)
- *  - Uses ncurses for an interactive interface
+ *  - libpcap (Install with `sudo apt install libpcap-dev`)
+ * 
+ * Note:
+ * This tool does **NOT** perform MITM attacks like Ettercap. It only passively
+ * captures and analyzes packets.
  *
  * Author: Professor Raziel K.
- * Date  : 19 March 2025
+ * Date  : 19th March 2025
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
 #include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <netinet/ip_icmp.h>
 #include <netinet/if_ether.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -38,29 +43,46 @@
 
 #define SNAP_LEN 1518  // Max packet size to capture
 #define DEFAULT_INTERFACE "eth0"
-#define DELAY 100000   // 100ms delay to slow down packet display
 
-/* Function to resolve an IP address to a hostname */
+/* Function to resolve IP address to hostname */
 const char *resolve_hostname(const char *ip_address) {
     struct in_addr addr;
     struct hostent *host_entry;
 
     if (!inet_aton(ip_address, &addr)) {
-        return ip_address;  // Return original IP if conversion fails
+        return ip_address;
     }
 
     host_entry = gethostbyaddr(&addr, sizeof(addr), AF_INET);
     if (host_entry) {
-        return host_entry->h_name;  // Return resolved hostname
+        return host_entry->h_name;
     }
 
-    return ip_address;  // Return IP if hostname resolution fails
+    return ip_address;
+}
+
+/* Function to print protocol information */
+void print_protocol_info(uint8_t protocol) {
+    switch (protocol) {
+        case IPPROTO_TCP:
+            printf("Protocol: TCP ");
+            break;
+        case IPPROTO_UDP:
+            printf("Protocol: UDP ");
+            break;
+        case IPPROTO_ICMP:
+            printf("Protocol: ICMP ");
+            break;
+        default:
+            printf("Protocol: OTHER ");
+            break;
+    }
 }
 
 /* Packet handler function */
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
     struct ether_header *eth_header = (struct ether_header *)packet;
-    
+
     // Only process IP packets
     if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
         return;
@@ -70,7 +92,7 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
 
     char source_ip[INET_ADDRSTRLEN], dest_ip[INET_ADDRSTRLEN];
 
-    // Convert source and destination IP to string
+    // Convert source and destination IPs to strings
     inet_ntop(AF_INET, &(ip_header->ip_src), source_ip, INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &(ip_header->ip_dst), dest_ip, INET_ADDRSTRLEN);
 
@@ -78,11 +100,13 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     const char *source_hostname = resolve_hostname(source_ip);
     const char *dest_hostname = resolve_hostname(dest_ip);
 
-    // Print packet info to the console
-    printf("Packet: %s (%s) -> %s (%s) | Size: %d bytes\n",
-           source_ip, source_hostname, dest_ip, dest_hostname, header->len);
+    // Print packet details
+    printf("\nPacket Captured - Size: %d bytes\n", header->len);
+    printf("From: %s (%s) -> To: %s (%s)\n", source_ip, source_hostname, dest_ip, dest_hostname);
+    print_protocol_info(ip_header->ip_p);
+    printf("\n");
 
-    usleep(DELAY);  // Slow down the display to 100ms delay
+    fflush(stdout);
 }
 
 /* Main function */
@@ -96,7 +120,7 @@ int main(int argc, char *argv[]) {
         dev = argv[1];
     }
 
-    // Open the device for packet capture
+    // Open device for packet capture
     handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
     if (handle == NULL) {
         fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
@@ -105,10 +129,8 @@ int main(int argc, char *argv[]) {
 
     printf("Listening on %s...\n", dev);
 
-    // Capture packets in a loop
-    while (1) {
-        pcap_dispatch(handle, 1, packet_handler, NULL); // Process one packet at a time
-    }
+    // Start capturing packets
+    pcap_loop(handle, 0, packet_handler, NULL);
 
     // Cleanup
     pcap_close(handle);
