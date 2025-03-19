@@ -9,7 +9,7 @@
  *
  * Usage:
  *   Compile the program:
- *     gcc -o tcp_lb_daemon tcp_lb_daemon.c
+ *    gcc -o tcp_lb_daemon tcp_lb_daemon.c -lpthread
  *
  *   Run the program as a daemon:
  *     sudo ./tcp_lb_daemon
