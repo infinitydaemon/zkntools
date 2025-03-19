@@ -34,11 +34,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
-#include <ncurses.h>
-#include <unistd.h> // For usleep()
+#include <unistd.h>
 
 #define SNAP_LEN 1518  // Max packet size to capture
 #define DEFAULT_INTERFACE "eth0"
+#define DELAY 100000   // 100ms delay to slow down packet display
 
 /* Function to resolve an IP address to a hostname */
 const char *resolve_hostname(const char *ip_address) {
@@ -55,16 +55,6 @@ const char *resolve_hostname(const char *ip_address) {
     }
 
     return ip_address;  // Return IP if hostname resolution fails
-}
-
-/* NCurses window for packet display */
-void setup_ncurses() {
-    initscr();            // Start ncurses mode
-    cbreak();             // Disable line buffering
-    noecho();             // Don't echo user input
-    curs_set(0);          // Hide cursor
-    keypad(stdscr, TRUE); // Enable keyboard input
-    nodelay(stdscr, TRUE); // Non-blocking input
 }
 
 /* Packet handler function */
@@ -88,20 +78,11 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     const char *source_hostname = resolve_hostname(source_ip);
     const char *dest_hostname = resolve_hostname(dest_ip);
 
-    // Display packet info in ncurses
-    static int row = 1;
-    mvprintw(row, 0, "%s (%s) -> %s (%s) | Size: %d bytes",
-             source_ip, source_hostname, dest_ip, dest_hostname, header->len);
-    
-    row++;
-    if (row >= LINES - 1) {
-        row = 1; // Reset if screen is full
-        clear();
-        mvprintw(0, 0, "Packet Sniffer - Press 'q' to quit");
-    }
+    // Print packet info to the console
+    printf("Packet: %s (%s) -> %s (%s) | Size: %d bytes\n",
+           source_ip, source_hostname, dest_ip, dest_hostname, header->len);
 
-    refresh();
-    usleep(150000); // 150ms delay to slow down scrolling
+    usleep(DELAY);  // Slow down the display to 100ms delay
 }
 
 /* Main function */
@@ -122,25 +103,14 @@ int main(int argc, char *argv[]) {
         return 2;
     }
 
-    // Setup ncurses UI
-    setup_ncurses();
-    mvprintw(0, 0, "Listening on %s... Press 'q' to quit", dev);
-    refresh();
+    printf("Listening on %s...\n", dev);
 
     // Capture packets in a loop
     while (1) {
         pcap_dispatch(handle, 1, packet_handler, NULL); // Process one packet at a time
-        
-        // Check for user input
-        int ch = getch();
-        if (ch == 'q' || ch == 'Q') {
-            break; // Quit if user presses 'q'
-        }
     }
 
     // Cleanup
     pcap_close(handle);
-    endwin(); // End ncurses mode
     return 0;
 }
-
