@@ -43,6 +43,7 @@
 
 #define SNAP_LEN 1518  // Max packet size to capture
 #define DEFAULT_INTERFACE "eth0"
+#define DELAY 200000    // 200ms delay in microseconds (200,000 μs)
 
 /* Function to resolve IP address to hostname */
 const char *resolve_hostname(const char *ip_address) {
@@ -107,6 +108,9 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     printf("\n");
 
     fflush(stdout);
+
+    // Delay to slow down output
+    usleep(DELAY);  // 200ms (200,000 microseconds)
 }
 
 /* Main function */
