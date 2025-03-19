@@ -1,4 +1,31 @@
-// compile with gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
+/*
+ * packet_sniff.c - A Simple Packet Sniffer
+ * -----------------------------------------
+ * This program captures network packets using `libpcap` and provides a 
+ * user-friendly interface using `ncurses`. It allows real-time monitoring 
+ * of network traffic.
+ *
+ * Compilation:
+ *  gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
+ *
+ * Usage:
+ *  sudo ./packet_sniff 
+ * 
+ *
+ * Dependencies:
+ *  - libpcap   : Packet capture library (install with `sudo apt install libpcap-dev`)
+ *  - ncurses   : Terminal UI library (install with `sudo apt install libncurses-dev`)
+ *
+ *
+ * Features:
+ *  - Captures packets in real time
+ *  - Displays packet details (source, destination, protocol, size)
+ *  - Uses ncurses for an interactive interface
+ *
+ * Author: Professor Raziel K.
+ * Date  : 19 March 2025
+ */
+
 
 #include <pcap.h>
 #include <ncurses.h>
