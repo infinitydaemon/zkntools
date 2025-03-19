@@ -26,106 +26,121 @@
  * Date  : 19 March 2025
  */
 
-
-#include <pcap.h>
-#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
+#include <pcap.h>
 #include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
 #include <netinet/if_ether.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <string.h>
+#include <ncurses.h>
+#include <unistd.h> // For usleep()
 
-#define SNAP_LEN 1518  // Max packet length
+#define SNAP_LEN 1518  // Max packet size to capture
+#define DEFAULT_INTERFACE "eth0"
 
-// Initialize ncurses with color settings
-void init_ncurses() {
-    initscr();
-    start_color();
-    init_pair(1, COLOR_GREEN, COLOR_BLUE);  // Green text, blue background
-    bkgd(COLOR_PAIR(1));  // Apply background color
-    attron(COLOR_PAIR(1)); // Use color pair for text
-    cbreak();
-    noecho();
-    curs_set(0);
-    timeout(100); // Non-blocking input
-    keypad(stdscr, TRUE);
-    refresh();
+/* Function to resolve an IP address to a hostname */
+const char *resolve_hostname(const char *ip_address) {
+    struct in_addr addr;
+    struct hostent *host_entry;
+
+    if (!inet_aton(ip_address, &addr)) {
+        return ip_address;  // Return original IP if conversion fails
+    }
+
+    host_entry = gethostbyaddr(&addr, sizeof(addr), AF_INET);
+    if (host_entry) {
+        return host_entry->h_name;  // Return resolved hostname
+    }
+
+    return ip_address;  // Return IP if hostname resolution fails
 }
 
-// Packet capture callback function
+/* NCurses window for packet display */
+void setup_ncurses() {
+    initscr();            // Start ncurses mode
+    cbreak();             // Disable line buffering
+    noecho();             // Don't echo user input
+    curs_set(0);          // Hide cursor
+    keypad(stdscr, TRUE); // Enable keyboard input
+    nodelay(stdscr, TRUE); // Non-blocking input
+}
+
+/* Packet handler function */
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-    struct ethhdr *eth = (struct ethhdr *)packet;
-    struct ip *ip_header = (struct ip *)(packet + sizeof(struct ethhdr));
-
-    if (ntohs(eth->h_proto) == ETH_P_IP) { // Check if IP packet
-        char src_ip[INET_ADDRSTRLEN], dst_ip[INET_ADDRSTRLEN];
-
-        strcpy(src_ip, inet_ntoa(ip_header->ip_src));
-        strcpy(dst_ip, inet_ntoa(ip_header->ip_dst));
-
-        char protocol[10];
-        switch (ip_header->ip_p) {
-            case IPPROTO_TCP: strcpy(protocol, "TCP"); break;
-            case IPPROTO_UDP: strcpy(protocol, "UDP"); break;
-            case IPPROTO_ICMP: strcpy(protocol, "ICMP"); break;
-            default: strcpy(protocol, "Other");
-        }
-        // Ncurses display update
-        static int row = 3;
-        mvprintw(row, 1, "Packet: %d bytes | Src: %s | Dst: %s | Protocol: %s",
-                 header->len, src_ip, dst_ip, protocol);
-        row++;
-        if (row >= LINES - 2) row = 3; // Scroll within screen bounds
-
-        mvprintw(1, 1, "Press 'q' to quit.");
-        refresh();
+    struct ether_header *eth_header = (struct ether_header *)packet;
+    
+    // Only process IP packets
+    if (ntohs(eth_header->ether_type) != ETHERTYPE_IP) {
+        return;
     }
+
+    struct ip *ip_header = (struct ip *)(packet + sizeof(struct ether_header));
+
+    char source_ip[INET_ADDRSTRLEN], dest_ip[INET_ADDRSTRLEN];
+
+    // Convert source and destination IP to string
+    inet_ntop(AF_INET, &(ip_header->ip_src), source_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip_header->ip_dst), dest_ip, INET_ADDRSTRLEN);
+
+    // Resolve hostnames
+    const char *source_hostname = resolve_hostname(source_ip);
+    const char *dest_hostname = resolve_hostname(dest_ip);
+
+    // Display packet info in ncurses
+    static int row = 1;
+    mvprintw(row, 0, "%s (%s) -> %s (%s) | Size: %d bytes",
+             source_ip, source_hostname, dest_ip, dest_hostname, header->len);
+    
+    row++;
+    if (row >= LINES - 1) {
+        row = 1; // Reset if screen is full
+        clear();
+        mvprintw(0, 0, "Packet Sniffer - Press 'q' to quit");
+    }
+
+    refresh();
+    usleep(100000); // 100ms delay to slow down scrolling
 }
 
-int main() {
+/* Main function */
+int main(int argc, char *argv[]) {
+    char *dev = DEFAULT_INTERFACE; // Default to eth0
     char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_if_t *alldevs;
-    pcap_if_t *device;
+    pcap_t *handle;
 
-    // Find all devices
-    if (pcap_findalldevs(&alldevs, errbuf) == -1) {
-        fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
-        return 1;
+    // Allow user to specify interface
+    if (argc > 1) {
+        dev = argv[1];
     }
 
-    // Use the first device
-    if (alldevs == NULL) {
-        fprintf(stderr, "No devices found.\n");
-        return 1;
-    }
-    device = alldevs;
-
-    pcap_t *handle = pcap_open_live(device->name, SNAP_LEN, 1, 1000, errbuf);
+    // Open the device for packet capture
+    handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
     if (handle == NULL) {
-        fprintf(stderr, "Could not open device %s: %s\n", device->name, errbuf);
-        pcap_freealldevs(alldevs);
+        fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
         return 2;
     }
 
-    // Initialize ncurses with colors
-    init_ncurses();
-    mvprintw(0, 1, "Network Monitor - Listening on %s", device->name);
+    // Setup ncurses UI
+    setup_ncurses();
+    mvprintw(0, 0, "Listening on %s... Press 'q' to quit", dev);
     refresh();
 
-    // Capture packets and handle user input
+    // Capture packets in a loop
     while (1) {
-        pcap_dispatch(handle, 1, packet_handler, NULL);
-
+        pcap_dispatch(handle, 1, packet_handler, NULL); // Process one packet at a time
+        
+        // Check for user input
         int ch = getch();
-        if (ch == 'q') break;  // Quit on 'q'
+        if (ch == 'q' || ch == 'Q') {
+            break; // Quit if user presses 'q'
+        }
     }
 
     // Cleanup
     pcap_close(handle);
-    pcap_freealldevs(alldevs);
-    endwin();
+    endwin(); // End ncurses mode
     return 0;
 }
+
