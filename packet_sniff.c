@@ -101,7 +101,7 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     }
 
     refresh();
-    usleep(100000); // 100ms delay to slow down scrolling
+    usleep(150000); // 150ms delay to slow down scrolling
 }
 
 /* Main function */
