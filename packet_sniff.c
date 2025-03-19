@@ -1,4 +1,4 @@
-# compile with gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
+// compile with gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
 
 #include <pcap.h>
 #include <ncurses.h>
