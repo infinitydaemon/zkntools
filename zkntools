@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ZKN Tools by CWD SYSTEMS
+# ZKN Tools by Raziel K.
 # Feel free  to contribute
 
 # Function to display the menu
@@ -17,8 +17,9 @@ show_menu() {
         8 "Check Security & Update System" \
 	9 "Packet Sniffer" \
 	10 "Country Block"\
-	11 "Warranty & Disclaimer"\
-	12 "Exit" 2> /tmp/menu_choice
+	11 "Walletshield LB"\
+	12 "Warranty & Disclaimer"\
+	13 "Exit" 2> /tmp/menu_choice
 
     choice=$(< /tmp/menu_choice)
     execute_program "$choice"
@@ -37,8 +38,9 @@ execute_program() {
 	8) cmd="/usr/local/bin/checksec";;
 	9) cmd="sudo /usr/local/bin/packet_sniff";;
         10)cmd="/usr/local/bin/countryblock";;
-	11)cmd="/usr/local/bin/support";;
-	12) clear; exit 0;;
+	11)cmd="sudo /usr/local/bin/tcp_lb_daemon";;
+	12)cmd="/usr/local/bin/support";;
+	13) clear; exit 0;;
         *) dialog --msgbox "Invalid option. Please try again." 5 30; return;;
     esac
     
