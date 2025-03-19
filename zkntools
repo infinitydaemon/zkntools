@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# ZK Tools by CWD SYSTEMS
+# ZKN Tools by CWD SYSTEMS
 # Feel free  to contribute
 
 # Function to display the menu
 show_menu() {
-    dialog --clear --title "ZK Tools V 1.1 by CWD SYSTEMS" \
+    dialog --clear --title "ZKN Tools V 1.1 by CWD SYSTEMS" \
         --menu "Scroll & select an option:" 20 60 9 \
         1 "Check for Rootkits & Backdoors" \
         2 "Clear ZerOS System Logs" \
