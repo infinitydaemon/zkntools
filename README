@@ -19,7 +19,7 @@ Clone the repository and set up executable permissions:
 
 sudo apt update
 sudo apt install dialog ipset chkrootkit libpcap-dev libncurses-dev rkhunter -y
-https://github.com/infinitydaemon/zkntools.git
+git clone https://github.com/infinitydaemon/zkntools.git
 cd zktools
 chmod +x *
 gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
