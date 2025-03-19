@@ -23,6 +23,9 @@ https://github.com/infinitydaemon/zkntools.git
 cd zktools
 chmod +x *
 gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
+nano tcp_lb_daemon.c 
+   > Edit the backend nodes IP addresses
+gcc -o tcp_lb_daemon tcp_lb_daemon.c -lpthread
 sudo cp * /usr/local/bin
 cd..
 rm -rf zkntools
