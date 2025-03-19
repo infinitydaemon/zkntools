@@ -1,7 +1,7 @@
 
-zktools
+zkntools
 
-zktools is a collection of open Bash and C code designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400 and compatible devices. These tools help automate security configurations, manage system resources, and enhance overall system integrity. The tools are a work in progress and more features will be added in time.
+zkntools is a collection of open Bash and C code designed for system security and system management for Zero Knowledge Network (ZKN) Edge Node 400 and compatible devices. These tools help automate security configurations, manage system resources, and enhance overall system integrity. The tools are a work in progress and more features will be added in time.
 
 Features
 
@@ -19,13 +19,13 @@ Clone the repository and set up executable permissions:
 
 sudo apt update
 sudo apt install dialog ipset chkrootkit libpcap-dev libncurses-dev rkhunter -y
-https://github.com/infinitydaemon/zktools.git
+https://github.com/infinitydaemon/zkntools.git
 cd zktools
 chmod +x *
 gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
 sudo cp * /usr/local/bin
 cd..
-rm -rf zktools
+rm -rf zkntools
 
-Use "zktools" for main menu.
+Use "zkntools" for main menu.
 
