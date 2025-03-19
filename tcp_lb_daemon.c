@@ -75,18 +75,20 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <pthread.h>
 
-#define BACKEND_NODES 5
+#define BACKEND_NODES 3
 #define BUFFER_SIZE 1024
 #define LOG_FILE "/var/log/tcp_lb_daemon.log"
 
 const char *backend_nodes[BACKEND_NODES] = {
     "192.168.1.101",
-    "203.221.65.1",
-    "94.13.4.1",
-    "104.3.71.72",
-    "10.172.10.13"
+    "192.168.1.102",
+    "192.168.1.103"
 };
+
+int current_backend = 0; // Shared variable for round-robin selection
+pthread_mutex_t backend_mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread-safe access
 
 void daemonize() {
     pid_t pid = fork();
@@ -135,12 +137,72 @@ void log_message(const char *message) {
     printf("[%s] %s\n", timestamp, message);
 }
 
-int main() {
-    int lb_socket, client_socket, backend_socket;
-    struct sockaddr_in lb_addr, client_addr, backend_addr;
-    socklen_t addr_len = sizeof(client_addr);
+// Thread function to handle client connections
+void *handle_client(void *arg) {
+    int client_socket = *(int *)arg;
+    int backend_socket;
+    struct sockaddr_in backend_addr;
     char buffer[BUFFER_SIZE];
-    int current_backend = 0;
+
+    // Select the backend server (round-robin)
+    pthread_mutex_lock(&backend_mutex);
+    const char *backend_ip = backend_nodes[current_backend];
+    current_backend = (current_backend + 1) % BACKEND_NODES;
+    pthread_mutex_unlock(&backend_mutex);
+
+    // Connect to the backend server
+    backend_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (backend_socket == -1) {
+        log_message("Backend socket creation failed");
+        close(client_socket);
+        pthread_exit(NULL);
+    }
+
+    memset(&backend_addr, 0, sizeof(backend_addr));
+    backend_addr.sin_family = AF_INET;
+    backend_addr.sin_port = htons(7070);
+    inet_pton(AF_INET, backend_ip, &backend_addr.sin_addr);
+
+    if (connect(backend_socket, (struct sockaddr *)&backend_addr, sizeof(backend_addr)) < 0) {
+        log_message("Connection to backend failed");
+        close(backend_socket);
+        close(client_socket);
+        pthread_exit(NULL);
+    }
+
+    char log_msg[256];
+    snprintf(log_msg, sizeof(log_msg), "Connected to backend: %s", backend_ip);
+    log_message(log_msg);
+
+    // Forward data between client and backend
+    while (1) {
+        ssize_t bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
+        if (bytes_received <= 0) {
+            break;
+        }
+
+        send(backend_socket, buffer, bytes_received, 0);
+
+        bytes_received = recv(backend_socket, buffer, BUFFER_SIZE, 0);
+        if (bytes_received <= 0) {
+            break;
+        }
+
+        send(client_socket, buffer, bytes_received, 0);
+    }
+
+    // Close the connections
+    close(backend_socket);
+    close(client_socket);
+
+    log_message("Connection closed");
+    pthread_exit(NULL);
+}
+
+int main() {
+    int lb_socket, client_socket;
+    struct sockaddr_in lb_addr, client_addr;
+    socklen_t addr_len = sizeof(client_addr);
 
     // Daemonize the process
     daemonize();
@@ -183,55 +245,16 @@ int main() {
 
         log_message("New connection accepted");
 
-        // Connect to the backend server (round-robin)
-        backend_socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (backend_socket == -1) {
-            log_message("Backend socket creation failed");
+        // Create a new thread to handle the client connection
+        pthread_t thread_id;
+        if (pthread_create(&thread_id, NULL, handle_client, &client_socket) != 0) {
+            log_message("Failed to create thread");
             close(client_socket);
             continue;
         }
 
-        memset(&backend_addr, 0, sizeof(backend_addr));
-        backend_addr.sin_family = AF_INET;
-        backend_addr.sin_port = htons(7070);
-        inet_pton(AF_INET, backend_nodes[current_backend], &backend_addr.sin_addr);
-
-        if (connect(backend_socket, (struct sockaddr *)&backend_addr, sizeof(backend_addr)) < 0) {
-            log_message("Connection to backend failed");
-            close(backend_socket);
-            close(client_socket);
-            continue;
-        }
-
-        char log_msg[256];
-        snprintf(log_msg, sizeof(log_msg), "Connected to backend: %s", backend_nodes[current_backend]);
-        log_message(log_msg);
-
-        // Forward data between client and backend
-        while (1) {
-            ssize_t bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
-            if (bytes_received <= 0) {
-                break;
-            }
-
-            send(backend_socket, buffer, bytes_received, 0);
-
-            bytes_received = recv(backend_socket, buffer, BUFFER_SIZE, 0);
-            if (bytes_received <= 0) {
-                break;
-            }
-
-            send(client_socket, buffer, bytes_received, 0);
-        }
-
-        // Close the connections
-        close(backend_socket);
-        close(client_socket);
-
-        log_message("Connection closed");
-
-        // Move to the next backend server
-        current_backend = (current_backend + 1) % BACKEND_NODES;
+        // Detach the thread to allow it to clean up automatically
+        pthread_detach(thread_id);
     }
 
     // Close the load balancer socket
