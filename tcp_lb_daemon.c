@@ -1,6 +1,6 @@
  /* CWD SYSTEMS
- * Walletshield TCP Connection Load Balancer Daemon
- * Uses 1.4KB of RAM per generated thread.
+ *   Walletshield TCP Connection Load Balancer Daemon
+ *   Uses 1.4KB of RAM per generated thread.
  *
  * Description:
  *   This program acts as a simple TCP connection load balancer. It listens on
