@@ -1,8 +1,13 @@
 #!/bin/bash
 
 # ZKN Tools by Raziel K.
-# Feel free  to contribute
-
+# Feel free  to contribute to source code by creating pull requests.
+#
+# Credit to donors
+# ----------------
+# Gisele , https://x.com/GiseleWlotus
+# AndoC , https://x.com/titanenergy111 
+#
 # Function to display the menu
 show_menu() {
     dialog --clear --title "ZKN Tools V 1.1 by CWD SYSTEMS" \
