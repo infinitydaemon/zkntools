@@ -13,12 +13,24 @@ sudo cp /etc/tor/torrc /etc/tor/torrc.backup
 echo "Configuring Tor as a relay..."
 sudo bash -c 'cat > /etc/tor/torrc << EOL
 RunAsDaemon 1
-ORPort 9001
+# Basic Tor relay settings
 Nickname cwdsystems
-RelayBandwidthRate 10 MB
-RelayBandwidthBurst 20 MB
+ContactInfo cwdsystems@esomewhere.net
+# Set up the relay
+ORPort 9001
 ExitRelay 0
-ContactInfo your-email@some-domain.com
+RelayBandwidthRate 10 MBytes  # Limit to 10 MB/s
+RelayBandwidthBurst 20 MBytes # Allow bursts up to 20 MB/s
+# Ensure you have a static public IP
+Address auto  # If using a static IP, replace with your public IP
+# Set up the directory server to advertise your relay
+DirPort 9030  # Optional, allows your relay to be a directory mirror
+DirCache 1
+# Security and hardening
+SocksPort 0  # No SOCKS proxy, relay-only mode
+ControlPort 9051
+CookieAuthentication 1
+# Logs and debugging
 Log notice file /var/log/tor/notices.log
 EOL'
 
