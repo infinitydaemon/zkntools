@@ -17,7 +17,7 @@ RunAsDaemon 1
 Nickname cwdsystems
 ContactInfo cwdsystems@esomewhere.net
 # Set up the relay
-ORPort 9001
+ORPort 9001 # Must be reachable via port forwards.
 ExitRelay 0
 RelayBandwidthRate 10 MBytes  # Limit to 10 MB/s
 RelayBandwidthBurst 20 MBytes # Allow bursts up to 20 MB/s
