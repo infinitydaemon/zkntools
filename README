@@ -25,6 +25,7 @@ chmod +x *
 gcc -o packet_sniff packet_sniff.c -lpcap -lncurses
 gcc -o packet_capture packet_capture.c -lpcap
 gcc -o process_manager process_manager.c -lncurses
+gcc -o graph graph.c -lncurses
 nano tcp_lb_daemon.c 
    > Edit the backend nodes IP addresses
 gcc -o tcp_lb_daemon tcp_lb_daemon.c -lpthread
