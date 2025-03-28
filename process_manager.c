@@ -40,13 +40,14 @@ void refresh_process_list() {
                     FILE *cmdline = fopen(path, "r");
                     if (cmdline != NULL) {
                         char cmd[MAX_CMD_LENGTH] = {0};
-                        if (fgets(cmd, sizeof(cmd), cmdline) {
+                        if (fgets(cmd, sizeof(cmd), cmdline)) {  // Fixed: Added closing parenthesis
                             // Replace null bytes with spaces for display
                             for (int i = 0; i < strlen(cmd); i++) {
                                 if (cmd[i] == '\0') cmd[i] = ' ';
                             }
                             processes[process_count].pid = (int)pid;
                             strncpy(processes[process_count].cmd, cmd, MAX_CMD_LENGTH-1);
+                            processes[process_count].cmd[MAX_CMD_LENGTH-1] = '\0';  // Ensure null termination
                             process_count++;
                         }
                         fclose(cmdline);
