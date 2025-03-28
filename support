@@ -16,6 +16,7 @@ echo -e "    Z     K  K    NN  N   "
 echo -e "   Z      KKK     N N N   "
 echo -e "  Z       K  K    N  NN   "
 echo -e " ZZZZZ    K   K   N   N   "
+echo " Tools by CWD SYSTEMS "
 echo -e "${RESET}"
 
 # Support message
