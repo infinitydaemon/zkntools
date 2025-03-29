@@ -1,3 +1,9 @@
+ // Specifically tracks the walletshield process (assumes the executable is named "walletshield").
+ // CPU Usage: Calculated from /proc/<pid>/stat
+ // Memory Usage: Calculated from /proc/<pid>/status (RSS) and /proc/meminfo (total memory)
+ // Compile with gcc -o walletshield_monitor walletshield_monitor.c -lncurses
+ // Execute with sudo
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
