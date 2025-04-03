@@ -18,7 +18,7 @@ Installation
 Clone the repository and set up executable permissions:
 
 sudo apt update
-sudo apt install dialog ipset chkrootkit libpcap-dev libncurses-dev rkhunter -y
+sudo apt install dialog ipset chkrootkit libpcap-dev libncurses-dev rkhunter python3-psutil -y
 git clone https://github.com/infinitydaemon/zkntools.git
 cd zktools
 chmod +x *
