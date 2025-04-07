@@ -20,15 +20,16 @@ show_menu() {
         6 "Basic System Info" \
         7 "Traffic Monitor" \
         8 "Check Security & Update System" \
-	9 "Traffic Graphs" \
-	10 "Country Block"\
-	11 "Walletshield LB"\
-	12 "Packet Sniffer"\
-	13 "Packet Capture"\
-	14 "Walletshield Monitor"\
-	15 "Process Manager"\
-	16 "Warranty & Disclaimer"\
-	17 "Exit" 2> /tmp/menu_choice
+        9 "Traffic Graphs" \
+        10 "Country Block"\
+        11 "Walletshield LB"\
+        12 "Packet Sniffer"\
+        13 "Packet Capture"\
+        14 "Walletshield Monitor"\
+        15 "Process Manager"\
+        16 "ZKN Wireguard"\
+        17 "Warranty & Disclaimer"\
+        18 "Exit" 2> /tmp/menu_choice
 
     choice=$(< /tmp/menu_choice)
     execute_program "$choice"
@@ -37,23 +38,24 @@ show_menu() {
 # Function to execute the selected program
 execute_program() {
     case $1 in
-        1) cmd="/usr/local/bin/audit";;
+   	1) cmd="/usr/local/bin/audit";;
         2) cmd="/usr/local/bin/clearlogs";;
         3) cmd="/usr/local/bin/cpu_status";;
         4) cmd="sudo /usr/local/bin/fw_status";;
         5) cmd="/usr/local/bin/healthcheck";;
         6) cmd="/usr/local/bin/info";;
         7) cmd="/usr/local/bin/trafficmon";;
-	8) cmd="/usr/local/bin/checksec";;
-	9) cmd="sudo /usr/local/bin/graph";;
+        8) cmd="/usr/local/bin/checksec";;
+        9) cmd="sudo /usr/local/bin/graph";;
         10)cmd="/usr/local/bin/countryblock";;
-	11)cmd="sudo /usr/local/bin/tcp_lb_daemon";;
-	12)cmd="sudo /usr/local/bin/packet_sniff";;
-	13)cmd="sudo /usr/local/bin/packet_capture";;
-	14)cmd="sudo /usr/local/bin/walletshield_monitor";;
-	15)cmd="sudo /usr/local/bin/process_manager";;
-	16)cmd="/usr/local/bin/support";;
-	17) clear; exit 0;;
+        11)cmd="sudo /usr/local/bin/tcp_lb_daemon";;
+        12)cmd="sudo /usr/local/bin/packet_sniff";;
+        13)cmd="sudo /usr/local/bin/packet_capture";;
+        14)cmd="sudo /usr/local/bin/walletshield_monitor";;
+        15)cmd="sudo /usr/local/bin/process_manager";;
+        16)cmd="sudo /usr/local/bin/wireguard";;
+        17)cmd="/usr/local/bin/support";;
+        18) clear; exit 0;;
         *) dialog --msgbox "Invalid option. Please try again." 5 30; return;;
     esac
     
