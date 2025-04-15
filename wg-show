@@ -3,7 +3,7 @@
 # Function to check and display connected users from WireGuard using `wg show`
 check_connected_users() {
     # Get the list of connected peers from wg show
-    connected_users=$(sudo wg show wg0 peers)
+    connected_users=$(sudo wg show)
 
     if [[ -z "$connected_users" ]]; then
         echo -e "\033[1;31mNo users connected to WireGuard.\033[0m"
